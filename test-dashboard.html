@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Traffic Management System - Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #27ae60;
+            color: white;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #3498db;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .traffic-lights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .traffic-light {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .light-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .green { background: #27ae60; }
+        .yellow { background: #f39c12; }
+        .red { background: #e74c3c; }
+        .congestion-bar {
+            width: 100%;
+            height: 6px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .congestion-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        .congestion-low { background: #27ae60; }
+        .congestion-medium { background: #f39c12; }
+        .congestion-high { background: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚦 AI Traffic Management System</h1>
+            <div class="status">Simulation Mode - Working</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalTraffic">0 MB</div>
+                <div class="stat-label">Total Traffic</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeConnections">0</div>
+                <div class="stat-label">Active Connections</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="anomalyCount">0</div>
+                <div class="stat-label">Anomalies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgCongestion">0%</div>
+                <div class="stat-label">Avg Congestion</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Real-time Traffic Flow</h3>
+            <canvas id="trafficChart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h3>AI-Controlled Traffic Lights</h3>
+            <div class="traffic-lights" id="trafficLights">
+                <!-- Traffic lights will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Chart.js
+        const ctx = document.getElementById('trafficChart').getContext('2d');
+        const trafficChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Traffic Flow (MB)',
+                    data: [],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Mock data generation
+        function generateMockData() {
+            // Generate traffic chart data
+            const now = new Date();
+            const labels = [];
+            const data = [];
+            
+            for (let i = 19; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 30000);
+                labels.push(time.toLocaleTimeString());
+                data.push(Math.floor(Math.random() * 50) + 10);
+            }
+            
+            trafficChart.data.labels = labels;
+            trafficChart.data.datasets[0].data = data;
+            trafficChart.update('none');
+
+            // Update stats
+            document.getElementById('totalTraffic').textContent = 
+                (Math.floor(Math.random() * 200) + 100) + ' MB';
+            document.getElementById('activeConnections').textContent = 
+                Math.floor(Math.random() * 2000) + 1000;
+            document.getElementById('anomalyCount').textContent = 
+                Math.floor(Math.random() * 10);
+            document.getElementById('avgCongestion').textContent = 
+                Math.floor(Math.random() * 100) + '%';
+
+            // Update traffic lights
+            updateTrafficLights();
+        }
+
+        function updateTrafficLights() {
+            const lights = [
+                { name: 'Kenyatta & Moi', status: ['green', 'yellow', 'red'][Math.floor(Math.random() * 3)], congestion: Math.floor(Math.random() * 100) },
+                { name: 'Harambee & Kenyatta', status: ['green', 'yellow', 'red'][Math.floor(Math.random() * 3)], congestion: Math.floor(Math.random() * 100) },
+                { name: 'Wabera & Moi', status: ['green', 'yellow', 'red'][Math.floor(Math.random() * 3)], congestion: Math.floor(Math.random() * 100) },
+                { name: 'Parliament Road', status: ['green', 'yellow', 'red'][Math.floor(Math.random() * 3)], congestion: Math.floor(Math.random() * 100) }
+            ];
+
+            const container = document.getElementById('trafficLights');
+            container.innerHTML = '';
+
+            lights.forEach(light => {
+                const lightDiv = document.createElement('div');
+                lightDiv.className = 'traffic-light';
+                
+                const congestionClass = light.congestion > 70 ? 'congestion-high' : 
+                                      light.congestion > 40 ? 'congestion-medium' : 'congestion-low';
+                
+                lightDiv.innerHTML = `
+                    <div class="light-indicator ${light.status}">${light.status.toUpperCase()}</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">${light.name}</div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 10px;">Congestion</div>
+                    <div class="congestion-bar">
+                        <div class="congestion-fill ${congestionClass}" style="width: ${light.congestion}%"></div>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d;">${light.congestion}%</div>
+                `;
+                
+                container.appendChild(lightDiv);
+            });
+        }
+
+        // Start simulation
+        generateMockData();
+        setInterval(generateMockData, 3000);
+
+        console.log('🚦 AI Traffic Management System - Test Dashboard Running');
+        console.log('✅ Mock data simulation active');
+        console.log('📊 Real-time updates every 3 seconds');
+    </script>
+</body>
+</html>

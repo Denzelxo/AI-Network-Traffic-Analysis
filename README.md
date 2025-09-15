@@ -1,24 +1,24 @@
 # AI Traffic Management System
 
-A comprehensive AI-powered traffic management system designed for smart city traffic optimisation. This system uses artificial intelligence to monitor, predict, and optimize traffic flow to reduce congestion and improve transportation efficiency, with a focus on Nairobi, Kenya's Central Business District (CBD).
+A comprehensive AI-powered traffic management system designed for smart city traffic optimization. This system uses artificial intelligence to monitor, predict, and optimize traffic flow to reduce congestion and improve transportation efficiency, with a focus on Nairobi, Kenya's Central Business District (CBD).
 
 ## 🚦 Features
 
 ### Core Features
 - **Real-time Traffic Monitoring**: Live monitoring of traffic patterns and network anomalies
-- **AI Traffic Light Control**: Intelligent traffic light timing optimisation based on congestion levels
-- **Route Optimisation**: AI-powered alternative route suggestions to avoid congested areas
+- **AI Traffic Light Control**: Intelligent traffic light timing optimization based on congestion levels
+- **Route Optimization**: AI-powered alternative route suggestions to avoid congested areas
 - **Predictive Analytics**: Traffic congestion predictions with confidence levels
 - **Interactive Dashboards**: Multiple dashboard options for different use cases
-- **Simulation Mode**: Standalone operation with realistic mock data when the backend is unavailable
+- **Simulation Mode**: Standalone operation with realistic mock data when backend is unavailable
 
 ### Advanced Features
 - **Real-time Notifications**: Instant alerts for traffic incidents and congestion warnings
-- **Interactive Visualisations**: Charts, maps, and traffic light status displays
+- **Interactive Visualizations**: Charts, maps, and traffic light status displays
 - **Anomaly Detection**: AI-powered detection of unusual traffic patterns
 - **Historical Analytics**: Traffic pattern analysis over time
 - **Mobile-Responsive**: Works seamlessly on desktop, tablet, and mobile devices
-- **Smart Connection Handling**: Automatic fallback to simulation mode if the backend is unavailable
+- **Smart Connection Handling**: Automatic fallback to simulation mode if backend is unavailable
 
 ## 🛠️ Technology Stack
 
@@ -112,9 +112,9 @@ npm run frontend
 ### 🎯 **Quick Demo (No Setup Required)**
 For immediate demonstration, simply open `test-dashboard.html` in any web browser. This standalone file includes:
 - Realistic traffic simulation
-- Interactive charts and visualisations
+- Interactive charts and visualizations
 - AI traffic light control simulation
-- Route optimisation suggestions
+- Route optimization suggestions
 - No backend dependencies required
 
 ## 📊 Dashboard Options
@@ -153,9 +153,9 @@ For immediate demonstration, simply open `test-dashboard.html` in any web browse
 
 ### Traffic Management
 - `GET /api/traffic-management/traffic-lights` - Get traffic light status
-- `GET /api/traffic-management/route-optimisations` - Get route suggestions
+- `GET /api/traffic-management/route-optimizations` - Get route suggestions
 - `GET /api/traffic-management/predictions` - Get traffic predictions
-- `GET /api/traffic-management/optimisation-summary` - Get optimisation summary
+- `GET /api/traffic-management/optimization-summary` - Get optimization summary
 
 ### WebSocket Events
 - `trafficUpdate` - Real-time traffic data
@@ -163,14 +163,14 @@ For immediate demonstration, simply open `test-dashboard.html` in any web browse
 - `anomaliesUpdate` - New anomalies detected
 - `trafficAlert` - Traffic alerts and warnings
 - `congestionWarning` - Congestion level warnings
-- `routeOptimization` - New route optimisations
+- `routeOptimization` - New route optimizations
 
 ## 🎯 Use Cases
 
 ### For Traffic Management Authorities
 - Monitor real-time traffic conditions across Nairobi CBD
 - Receive instant alerts for congestion and incidents
-- Access AI-powered traffic light optimisation
+- Access AI-powered traffic light optimization
 - Get predictive insights for traffic planning
 
 ### For Commuters
@@ -180,23 +180,23 @@ For immediate demonstration, simply open `test-dashboard.html` in any web browse
 - Plan optimal travel routes
 
 ### For Urban Planners
-- Analyse traffic patterns and trends
+- Analyze traffic patterns and trends
 - Access historical traffic data
 - Get insights for infrastructure planning
 - Monitor the effectiveness of traffic management strategies
 
 ## 🔮 AI Features
 
-### Traffic Light Optimisation
+### Traffic Light Optimization
 - **Dynamic Timing**: Real-time adjustment based on congestion levels
 - **Priority Control**: High-priority intersections get preferential treatment
 - **Coordinated Management**: Synchronized timing across multiple intersections
 - **Peak Hour Adaptation**: Automatic adjustment for rush hour patterns
 
-### Route Optimisation
+### Route Optimization
 - **Real-time Calculation**: Instant alternative route suggestions
 - **Congestion Avoidance**: Routes that bypass high-traffic areas
-- **Time Savings**: Routes optimised for minimum travel time
+- **Time Savings**: Routes optimized for minimum travel time
 - **Multi-modal Integration**: Support for different transportation modes
 
 ### Predictive Analytics
@@ -227,16 +227,16 @@ For immediate demonstration, simply open `test-dashboard.html` in any web browse
 
 ## 📱 Mobile Support
 
-The dashboard is fully responsive and optimised for:
+The dashboard is fully responsive and optimized for:
 - **Desktop**: Full-featured dashboard experience
-- **Tablet**: Optimised layout for touch interfaces
+- **Tablet**: Optimized layout for touch interfaces
 - **Mobile**: Streamlined interface for on-the-go monitoring
 
 ## 🔄 Real-time Updates
 
 The system provides real-time updates through:
 - **WebSocket connections** for instant data updates (when backend is available)
-- **Smart fallback** to simulation mode when the backend is unavailable
+- **Smart fallback** to simulation mode when backend is unavailable
 - **Automatic refresh** every 3-5 seconds
 - **Live notifications** for critical events
 - **Real-time charts** and visualizations
@@ -247,7 +247,7 @@ The system provides real-time updates through:
 ### Phase 1 (Current) ✅
 - ✅ Basic traffic monitoring
 - ✅ AI traffic light control
-- ✅ Route optimisation
+- ✅ Route optimization
 - ✅ Real-time dashboard
 - ✅ Simulation mode for standalone operation
 - ✅ Smart connection handling
@@ -263,7 +263,7 @@ The system provides real-time updates through:
 
 ### Phase 3 (Future)
 - 📋 IoT sensor integration
-- 📋 Advanced predictive modelling
+- 📋 Advanced predictive modeling
 - 📋 Multi-city expansion
 - 📋 Real-time traffic camera feeds
 - 📋 Integration with traffic enforcement systems

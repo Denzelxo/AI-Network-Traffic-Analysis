@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nairobi CBD AI Traffic Management Dashboard</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1rem;
+            margin-top: 0.25rem;
+        }
+
+        .dashboard {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-change {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .positive { background: #d4edda; color: #155724; }
+        .negative { background: #f8d7da; color: #721c24; }
+        .neutral { background: #d1ecf1; color: #0c5460; }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .traffic-lights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .traffic-light-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .traffic-light {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .light-green { background: #27ae60; }
+        .light-yellow { background: #f39c12; }
+        .light-red { background: #e74c3c; }
+
+        .congestion-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .congestion-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .congestion-low { background: #27ae60; }
+        .congestion-medium { background: #f39c12; }
+        .congestion-high { background: #e74c3c; }
+
+        .route-optimization {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .route-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .route-time-saved {
+            background: #27ae60;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .map-placeholder {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-placeholder::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="3" fill="rgba(255,255,255,0.3)"/><circle cx="80" cy="30" r="2" fill="rgba(255,255,255,0.3)"/><circle cx="40" cy="70" r="4" fill="rgba(255,255,255,0.3)"/><circle cx="70" cy="80" r="2" fill="rgba(255,255,255,0.3)"/><circle cx="10" cy="60" r="3" fill="rgba(255,255,255,0.3)"/></svg>') repeat;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100px); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #3498db;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            border-left-color: #e74c3c;
+        }
+
+        .notification.warning {
+            border-left-color: #f39c12;
+        }
+
+        .notification.success {
+            border-left-color: #27ae60;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-online { background: #27ae60; }
+        .status-offline { background: #e74c3c; }
+        .status-connecting { background: #f39c12; }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+            
+            .dashboard {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚦 AI Traffic Management System</h1>
+        <div class="subtitle">Real-time traffic monitoring and optimization powered by AI</div>
+        <div style="margin-top: 0.5rem;">
+            <span class="status-indicator status-connecting" id="connectionStatus"></span>
+            <span id="connectionText">Connecting...</span>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Statistics Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalTraffic" style="color: #3498db;">0</div>
+                <div class="stat-label">Total Traffic (MB)</div>
+                <div class="stat-change positive" id="trafficChange">+5.2% from last hour</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeConnections" style="color: #27ae60;">0</div>
+                <div class="stat-label">Active Connections</div>
+                <div class="stat-change positive" id="connectionsChange">+12 from last hour</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="anomalyCount" style="color: #e74c3c;">0</div>
+                <div class="stat-label">Anomalies Detected</div>
+                <div class="stat-change neutral" id="anomalyChange">Monitoring</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgCongestion" style="color: #f39c12;">0%</div>
+                <div class="stat-label">Average Congestion</div>
+                <div class="stat-change negative" id="congestionChange">+3.1% from last hour</div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Traffic Chart -->
+            <div class="chart-container">
+                <div class="chart-title">Real-time Traffic Flow</div>
+                <canvas id="trafficChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- Traffic Predictions -->
+            <div class="chart-container">
+                <div class="chart-title">Traffic Predictions</div>
+                <div id="predictionsList">
+                    <div style="text-align: center; padding: 2rem; color: #7f8c8d;">
+                        <div class="loading"></div>
+                        <div style="margin-top: 1rem;">Loading predictions...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Traffic Lights Grid -->
+        <div class="chart-container">
+            <div class="chart-title">AI-Controlled Traffic Lights</div>
+            <div class="traffic-lights-grid" id="trafficLightsGrid">
+                <!-- Traffic lights will be populated here -->
+            </div>
+        </div>
+
+        <!-- Route Optimization -->
+        <div class="route-optimization">
+            <div class="chart-title">AI Route Optimization</div>
+            <div id="routeOptimizations">
+                <div style="text-align: center; padding: 2rem; color: #7f8c8d;">
+                    <div class="loading"></div>
+                    <div style="margin-top: 1rem;">Loading route optimizations...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data simulation
+        let mockDataInterval;
+        let isSimulationMode = false;
+        
+        // Try to connect to Socket.IO, fallback to mock mode
+        let socket;
+        try {
+            socket = io('http://localhost:5000', { 
+                timeout: 3000,
+                forceNew: true 
+            });
+        } catch (error) {
+            console.log('Socket.IO not available, using mock mode');
+            startMockSimulation();
+        }
+        
+        // Connection status management
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionText = document.getElementById('connectionText');
+
+        if (socket) {
+            socket.on('connect', () => {
+                connectionStatus.className = 'status-indicator status-online';
+                connectionText.textContent = 'Connected';
+                showNotification('Connected to traffic management system', 'success');
+                isSimulationMode = false;
+                if (mockDataInterval) clearInterval(mockDataInterval);
+            });
+
+            socket.on('disconnect', () => {
+                connectionStatus.className = 'status-indicator status-offline';
+                connectionText.textContent = 'Disconnected';
+                showNotification('Disconnected from traffic management system', 'error');
+                startMockSimulation();
+            });
+
+            socket.on('connect_error', () => {
+                connectionStatus.className = 'status-indicator status-offline';
+                connectionText.textContent = 'Using Mock Data';
+                showNotification('Using simulated traffic data', 'info');
+                startMockSimulation();
+            });
+
+            // Set timeout to fallback to mock mode if connection takes too long
+            setTimeout(() => {
+                if (socket && !socket.connected) {
+                    startMockSimulation();
+                }
+            }, 5000);
+        } else {
+            startMockSimulation();
+        }
+
+        // Mock simulation function
+        function startMockSimulation() {
+            if (mockDataInterval) return; // Already running
+            
+            isSimulationMode = true;
+            connectionStatus.className = 'status-indicator status-connecting';
+            connectionText.textContent = 'Simulation Mode';
+            showNotification('Running in simulation mode with mock data', 'info');
+            
+            // Start mock data updates
+            mockDataInterval = setInterval(() => {
+                generateMockTrafficData();
+                generateMockTrafficLights();
+                generateMockPredictions();
+                generateMockRouteOptimizations();
+                generateMockStats();
+            }, 3000);
+            
+            // Initial data load
+            generateMockTrafficData();
+            generateMockTrafficLights();
+            generateMockPredictions();
+            generateMockRouteOptimizations();
+            generateMockStats();
+        }
+
+        // Chart.js initialization
+        const ctx = document.getElementById('trafficChart').getContext('2d');
+        const trafficChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Traffic Flow (MB)',
+                    data: [],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Anomalies',
+                    data: [],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // Real-time data handlers (only if socket is connected)
+        if (socket) {
+            socket.on('realtimeStats', (stats) => {
+                updateStats(stats);
+            });
+
+            socket.on('realtimeTraffic', (traffic) => {
+                updateTrafficChart(traffic);
+            });
+
+            socket.on('realtimeAnomalies', (anomalies) => {
+                updateAnomalyCount(anomalies.length);
+            });
+
+            socket.on('realtimeTrafficLights', (lights) => {
+                updateTrafficLights(lights);
+            });
+
+            socket.on('realtimePredictions', (predictions) => {
+                updatePredictions(predictions);
+            });
+
+            socket.on('realtimeRouteOptimizations', (optimizations) => {
+                updateRouteOptimizations(optimizations);
+            });
+        }
+
+        // Mock data generation functions
+        function generateMockTrafficData() {
+            const mockTraffic = Array.from({ length: 20 }, (_, i) => ({
+                timestamp: new Date(Date.now() - i * 30000), // 30 seconds apart
+                bytes: Math.floor(Math.random() * 50000) + 10000,
+                packets: Math.floor(Math.random() * 500) + 100,
+                isAnomaly: Math.random() > 0.9
+            }));
+            
+            updateTrafficChart(mockTraffic);
+        }
+
+        function generateMockTrafficLights() {
+            const mockLights = [
+                {
+                    id: 'tl_001',
+                    location: { name: 'Kenyatta & Moi Ave' },
+                    status: ['red', 'yellow', 'green'][Math.floor(Math.random() * 3)],
+                    duration: Math.floor(Math.random() * 30) + 20,
+                    priority: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+                    congestionLevel: Math.floor(Math.random() * 100)
+                },
+                {
+                    id: 'tl_002',
+                    location: { name: 'Harambee & Kenyatta' },
+                    status: ['red', 'yellow', 'green'][Math.floor(Math.random() * 3)],
+                    duration: Math.floor(Math.random() * 30) + 20,
+                    priority: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+                    congestionLevel: Math.floor(Math.random() * 100)
+                },
+                {
+                    id: 'tl_003',
+                    location: { name: 'Wabera & Moi Ave' },
+                    status: ['red', 'yellow', 'green'][Math.floor(Math.random() * 3)],
+                    duration: Math.floor(Math.random() * 30) + 20,
+                    priority: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+                    congestionLevel: Math.floor(Math.random() * 100)
+                },
+                {
+                    id: 'tl_004',
+                    location: { name: 'Parliament Road' },
+                    status: ['red', 'yellow', 'green'][Math.floor(Math.random() * 3)],
+                    duration: Math.floor(Math.random() * 30) + 20,
+                    priority: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+                    congestionLevel: Math.floor(Math.random() * 100)
+                }
+            ];
+            
+            updateTrafficLights(mockLights);
+        }
+
+        function generateMockPredictions() {
+            const mockPredictions = [
+                {
+                    location: 'Kenyatta Avenue Junction',
+                    predictedCongestion: Math.floor(Math.random() * 100),
+                    confidence: Math.random(),
+                    timeHorizon: ['15min', '30min', '1h', '2h'][Math.floor(Math.random() * 4)],
+                    recommendations: [
+                        'Optimize traffic light timing',
+                        'Consider alternative routes',
+                        'Monitor peak hour patterns'
+                    ]
+                },
+                {
+                    location: 'Moi Avenue Intersection',
+                    predictedCongestion: Math.floor(Math.random() * 100),
+                    confidence: Math.random(),
+                    timeHorizon: ['15min', '30min', '1h', '2h'][Math.floor(Math.random() * 4)],
+                    recommendations: [
+                        'Increase green light duration',
+                        'Coordinate with nearby intersections',
+                        'Alert traffic marshals'
+                    ]
+                }
+            ];
+            
+            updatePredictions(mockPredictions);
+        }
+
+        function generateMockRouteOptimizations() {
+            const mockOptimizations = [
+                {
+                    from: 'CBD Center',
+                    to: 'Airport',
+                    timeSaved: Math.floor(Math.random() * 20) + 5,
+                    congestionAvoided: ['Moi Avenue', 'Industrial Area']
+                },
+                {
+                    from: 'Westlands',
+                    to: 'CBD Center',
+                    timeSaved: Math.floor(Math.random() * 15) + 3,
+                    congestionAvoided: ['Kenyatta Avenue']
+                }
+            ];
+            
+            updateRouteOptimizations(mockOptimizations);
+        }
+
+        // Generate mock stats
+        function generateMockStats() {
+            const mockStats = {
+                totalBytes: Math.floor(Math.random() * 1000000) + 500000,
+                uniqueIPs: Math.floor(Math.random() * 2000) + 1000,
+                anomalyCount: Math.floor(Math.random() * 10)
+            };
+            
+            updateStats(mockStats);
+        }
+
+        // Update functions
+        function updateStats(stats) {
+            document.getElementById('totalTraffic').textContent = formatBytes(stats.totalBytes);
+            document.getElementById('activeConnections').textContent = stats.uniqueIPs;
+            document.getElementById('anomalyCount').textContent = stats.anomalyCount;
+        }
+
+        function updateTrafficChart(traffic) {
+            const now = new Date();
+            const labels = traffic.map(item => now.toLocaleTimeString());
+            const trafficData = traffic.map(item => item.bytes / 1024 / 1024); // Convert to MB
+            const anomalyData = traffic.map(item => item.isAnomaly ? item.bytes / 1024 / 1024 : 0);
+
+            trafficChart.data.labels = labels.slice(-20); // Keep last 20 data points
+            trafficChart.data.datasets[0].data = trafficData.slice(-20);
+            trafficChart.data.datasets[1].data = anomalyData.slice(-20);
+            trafficChart.update('none');
+        }
+
+        function updateAnomalyCount(count) {
+            document.getElementById('anomalyCount').textContent = count;
+            if (count > 0) {
+                showNotification(`${count} traffic anomalies detected`, 'warning');
+            }
+        }
+
+        function updateTrafficLights(lights) {
+            const grid = document.getElementById('trafficLightsGrid');
+            grid.innerHTML = '';
+
+            lights.forEach(light => {
+                const card = document.createElement('div');
+                card.className = 'traffic-light-card';
+                
+                const lightClass = `light-${light.status}`;
+                const congestionClass = light.congestionLevel > 70 ? 'congestion-high' : 
+                                      light.congestionLevel > 40 ? 'congestion-medium' : 'congestion-low';
+                
+                card.innerHTML = `
+                    <div class="traffic-light ${lightClass}">${light.status.toUpperCase()}</div>
+                    <div style="font-weight: 600; margin-bottom: 0.5rem;">${light.location.name}</div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 1rem;">
+                        Duration: ${light.duration}s | Priority: ${light.priority}
+                    </div>
+                    <div style="font-size: 0.8rem; margin-bottom: 0.5rem;">Congestion</div>
+                    <div class="congestion-bar">
+                        <div class="congestion-fill ${congestionClass}" style="width: ${light.congestionLevel}%"></div>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 0.5rem;">${light.congestionLevel}%</div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function updatePredictions(predictions) {
+            const container = document.getElementById('predictionsList');
+            container.innerHTML = '';
+
+            predictions.forEach(prediction => {
+                const item = document.createElement('div');
+                item.style.cssText = 'padding: 1rem; margin: 0.5rem 0; background: rgba(255,255,255,0.5); border-radius: 8px; border-left: 4px solid #3498db;';
+                
+                const severity = prediction.predictedCongestion > 80 ? '#e74c3c' : 
+                               prediction.predictedCongestion > 60 ? '#f39c12' : '#27ae60';
+                
+                item.innerHTML = `
+                    <div style="font-weight: 600; margin-bottom: 0.5rem;">${prediction.location}</div>
+                    <div style="font-size: 0.9rem; color: #7f8c8d; margin-bottom: 0.5rem;">
+                        ${prediction.timeHorizon} • Confidence: ${Math.round(prediction.confidence * 100)}%
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <div style="width: 100%; height: 6px; background: #ecf0f1; border-radius: 3px; overflow: hidden;">
+                                <div style="height: 100%; background: ${severity}; width: ${prediction.predictedCongestion}%; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                        <div style="font-weight: 600; color: ${severity};">${prediction.predictedCongestion}%</div>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        function updateRouteOptimizations(optimizations) {
+            const container = document.getElementById('routeOptimizations');
+            container.innerHTML = '';
+
+            optimizations.forEach(optimization => {
+                const item = document.createElement('div');
+                item.className = 'route-item';
+                
+                item.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">${optimization.from} → ${optimization.to}</div>
+                        <div style="font-size: 0.8rem; color: #7f8c8d;">
+                            Avoids: ${optimization.congestionAvoided.join(', ')}
+                        </div>
+                    </div>
+                    <div class="route-time-saved">${optimization.timeSaved} min saved</div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 MB';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 0.25rem;">Traffic Alert</div>
+                <div style="font-size: 0.9rem;">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 5000);
+        }
+
+        // Initial data will be loaded by mock simulation or real-time connection
+    </script>
+</body>
+</html>

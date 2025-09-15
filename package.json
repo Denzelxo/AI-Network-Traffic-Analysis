@@ -1,0 +1,43 @@
+{
+  "name": "nairobi-cbd-ai-traffic-management",
+  "version": "1.0.0",
+  "description": "AI-powered traffic management system for Nairobi CBD",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build",
+    "start": "cd backend && npm start",
+    "test": "cd backend && npm test && cd ../frontend && npm test",
+    "lint": "cd backend && npm run lint && cd ../frontend && npm run lint"
+  },
+  "keywords": [
+    "traffic-management",
+    "ai",
+    "nairobi",
+    "cbd",
+    "smart-city",
+    "iot",
+    "real-time",
+    "dashboard"
+  ],
+  "author": "Nairobi Traffic Management Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/nairobi-cbd-ai-traffic-management.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/nairobi-cbd-ai-traffic-management/issues"
+  },
+  "homepage": "https://github.com/your-org/nairobi-cbd-ai-traffic-management#readme"
+}
